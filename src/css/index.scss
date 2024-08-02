@@ -1,0 +1,14 @@
+$design-width: 1920; 
+
+@function round-to-two-decimals($number) {
+    $multiplier: 100;
+    @return (round($number * $multiplier) / $multiplier);
+}
+@function tovw($px) {
+    @return round-to-two-decimals(($px / $design-width) * 100vw);
+}
+
+body{
+    margin: 0;
+    font-size: tovw(20);
+}
