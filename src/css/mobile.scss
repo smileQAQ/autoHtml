@@ -1,0 +1,15 @@
+$design-width: 900; 
+
+@function round-to-two-decimals($number) {
+    $multiplier: 100;
+    @return (round($number * $multiplier) / $multiplier);
+}
+@function tovw($px) {
+    @return round-to-two-decimals(($px / $design-width) * 100vw);
+}
+
+@media screen and (max-width: 900px) {
+    body{
+        color: red;
+    }
+}

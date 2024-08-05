@@ -11,10 +11,10 @@ module.exports = merge(common, {
       filename: 'bundle.[contenthash].js',
     },
     plugins:[
-        new ImageTransformPlugin(),
+        new ImageTransformPlugin({mode: 'prod'}),
         new HotUpdatePlugin({
             dir: path.resolve(__dirname, "src/assets/images"),
-            output: path.resolve(__dirname, "dist/images/"),
+            output: path.resolve(__dirname, "src/dist/images/"),
         }),
     ]
 });
