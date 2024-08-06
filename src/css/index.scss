@@ -8,7 +8,8 @@ $design-width: 1920;
     @return round-to-two-decimals(($px / $design-width) * 100vw);
 }
 
-body{
-    margin: 0;
-    font-size: tovw(20);
+.main {
+    .title{
+        font-size: tovw(20);
+    }
 }

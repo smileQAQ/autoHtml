@@ -24,24 +24,29 @@ const unit = {
 class HotUpdatePlugin {
   constructor(options) {
     this.options = options;
-    this.imagePathsArray = this.getAllImages();
-    
+    this.ImageMap = [];
+    this.deleteMap = [];
+    this.addMap = [];
   }
   async apply(compiler) {
-    compiler.hooks.emit.tapAsync('HotUpdatePlugin', (compilation, cb) => {
-      const outputDir = this.options.output;
-      this.imagePathsArray.forEach(imagePath => {
-        if (!fs.existsSync(outputDir)) {
-          fs.mkdirSync(outputDir, { recursive: true });
-        }
-        
-        if(imagePath.startsWith(path.join(this.options.dir, 'mobile'))){
-          this.generateImg({imagePath, outputDir}, {quality: 90}, 'jpg', true);
-        }else{
-          this.generateImg({imagePath, outputDir}, {quality: 90}, 'jpg', false);
-        }
-      });
-      cb();
+    compiler.hooks.emit.tap('HotUpdatePlugin', (compilation) => {
+      this.imagePathsArray = this.getAllImages();
+      this.searchCatalog();
+    });
+  }
+
+  createImageLoop(){
+    const outputDir = this.options.output;
+    this.addMap.forEach(imagePath => {
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+      
+      if(imagePath.startsWith(path.join(this.options.dir, 'mobile'))){
+        this.generateImg({imagePath, outputDir}, {quality: 90}, 'jpg', true);
+      }else{
+        this.generateImg({imagePath, outputDir}, {quality: 90}, 'jpg', false);
+      }
     });
   }
 
@@ -63,7 +68,7 @@ class HotUpdatePlugin {
             .jpeg(options)
             .toFile(path.join(outputDir, path.basename(imagePath, path.extname(imagePath)) + unit[key] + path.extname(imagePath)))
             .catch(err => console.error(err));
-            console.log('', Chalk.inverse(`生成${basename + unit[key]}图片成功`));
+            console.log(`生成${basename + unit[key]}图片成功`);
           }
         }else{
           for(const [key, ratio] of Object.entries(pcRadio)){
@@ -75,7 +80,7 @@ class HotUpdatePlugin {
             .jpeg(options)
             .toFile(path.join(outputDir,basename + unit[key] + path.extname(imagePath)))
             .catch(err => console.error(err));
-            console.log('', Chalk.inverse(`生成${basename + unit[key]}图片成功`));
+            console.log(`生成${basename + unit[key]}图片成功`);
           }
         }
     }catch(err){
@@ -100,14 +105,60 @@ class HotUpdatePlugin {
     return images;
   }
 
-  updateTxt(){
-    fs.writeFile('imageMap.txt', this.imagePathsArray.join('\n'), (err) => {
+  searchCatalog() {
+    fs.readFile('imageMap.txt', 'utf8', (err, data) => {
       if (err) {
-          console.error('写入文件时出错:', err);
+        this.writeTextMap(this.imagePathsArray);
+        return
+      }
+
+      this.ImageMap = data.split('\n');
+      this.deleteMap = this.ImageMap.filter(x => !this.imagePathsArray.includes(x));
+      this.addMap = this.imagePathsArray.filter(x => !this.ImageMap.includes(x));
+      this.deleteMap.length && this.updateTextMap('delete');
+      this.addMap.length && this.updateTextMap('addition');
+    })
+  }
+  writeTextMap(data){
+    fs.writeFile('imageMap.txt', data.join('\n'), 'utf8',  (err) => {
+      if (err) {
+        console.error('写入文件时出错:', err);
       } else {
-          console.log('文件写入成功');
+        console.log('文件写入成功');
       }
     })
+  }
+
+  updateTextMap(method){
+    if(method === 'delete'){
+      fs.readdir(this.options.output, (err, files) => {
+        this.deleteMap.map(v => {
+          if(v === '') return;
+          const fileName = v.match(/[\w-]+\.(jpg|png)$/ig)[0];
+          const name = fileName.split('.')[0];
+          const filesToDelete = files.filter(file => file.includes(name));
+
+          filesToDelete.forEach(file => {
+            const filePath = path.join(this.options.output, file);
+    
+            fs.unlink(filePath, (err) => {
+                if (err) {
+                    console.error(`删除文件 ${file} 时出错:`, err);
+                } else {
+                    console.log(`文件 ${file} 删除成功`);
+                }
+            });
+          });
+
+          const filteredLines = this.ImageMap.filter(line => !line.includes(name));
+          this.writeTextMap(filteredLines);
+        })
+      })
+    }else if(method === 'addition'){
+      let textData = this.ImageMap.concat(this.addMap);
+      this.writeTextMap(textData);
+      this.createImageLoop();
+    }
   }
 }
 

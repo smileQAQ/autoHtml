@@ -49,6 +49,18 @@ module.exports = {
           },
         },
       },
+      {
+        test: /\.(woff2?|ttf)$/,
+        use: [
+            {
+                loader: 'file-loader',
+                options: {
+                    outputPath: 'assets/fonts',
+                    name: '[name].[ext]'
+                }
+            }
+        ]
+      }
     ],
     
   },
