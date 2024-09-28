@@ -105,11 +105,11 @@ class HotUpdatePlugin {
       }else if(ParentTagName  == 'picture' && ParentClass.includes('fit-img')){
         if(isPhone){
           sharp(imagePath)
-          .toFile(path.join(outputDir, basename + path.extname(imagePath)))
+          .toFile(path.join(outputDir, basename + "_m"+ path.extname(imagePath)))
           .catch(err => console.error(err));
         }else{
           sharp(imagePath)
-          .toFile(path.join(outputDir, basename + "_m" + path.extname(imagePath)))
+          .toFile(path.join(outputDir, basename + path.extname(imagePath)))
           .catch(err => console.error(err));
         }
         stat = true;
@@ -171,8 +171,8 @@ class HotUpdatePlugin {
       fs.readdir(this.options.output, (err, files) => {
         this.deleteMap.map(v => {
           if(v === '') return;
-          const fileName = v.match(/[\w-]+\.(jpg|png)$/ig);
-          const name = fileName[0]?.split('.')[0];
+          const fileName = v.match(/[\w-]+\.(jpg|png)$/ig)[0];
+          const name = fileName?.split('.')[0];
           const filesToDelete = files.filter(file => file.includes(name));
 
           filesToDelete.forEach(file => {
