@@ -2,6 +2,7 @@ const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 const Chalk = require('chalk');
+const cheerio = require('cheerio');
 
 const pcRadio = {
   // '4k': 3840 / 2048,
@@ -30,6 +31,7 @@ class HotUpdatePlugin {
   }
   async apply(compiler) {
     compiler.hooks.emit.tap('HotUpdatePlugin', (compilation) => {
+      this.$ = cheerio.load(compilation.assets['index.html'].source());
       this.imagePathsArray = this.getAllImages();
       this.searchCatalog();
     });
@@ -58,34 +60,69 @@ class HotUpdatePlugin {
       const basename = path.basename(imagePath, path.extname(imagePath));
       const {width, height} = metaData;
 
-        if(isPhone){
-          for(const [key, ratio] of Object.entries(mbRadio)){
-            const newWidth = Math.round(width * ratio);
-            const newHeight = Math.round(height * ratio);
+      if(this.fitImageCreate(basename, imagePath, outputDir, isPhone)) return;
 
-            sharp(imagePath)
-            .resize({ width: newWidth, height: newHeight }) 
-            .jpeg(options)
-            .toFile(path.join(outputDir, path.basename(imagePath, path.extname(imagePath)) + unit[key] + path.extname(imagePath)))
-            .catch(err => console.error(err));
-            console.log(`生成${basename + unit[key]}图片成功`);
-          }
-        }else{
-          for(const [key, ratio] of Object.entries(pcRadio)){
-            const newWidth = Math.round(width * ratio);
-            const newHeight = Math.round(height * ratio);
+      if(isPhone){
+        for(const [key, ratio] of Object.entries(mbRadio)){
+          const newWidth = Math.round(width * ratio);
+          const newHeight = Math.round(height * ratio);
 
-            sharp(imagePath)
-            .resize({ width: newWidth, height: newHeight }) 
-            .jpeg(options)
-            .toFile(path.join(outputDir,basename + unit[key] + path.extname(imagePath)))
-            .catch(err => console.error(err));
-            console.log(`生成${basename + unit[key]}图片成功`);
-          }
+          sharp(imagePath)
+          .resize({ width: newWidth, height: newHeight }) 
+          .jpeg(options)
+          .toFile(path.join(outputDir, path.basename(imagePath, path.extname(imagePath)) + unit[key] + path.extname(imagePath)))
+          .catch(err => console.error(err));
+          console.log(`生成${basename + unit[key]}图片成功`);
         }
+      }else{
+        for(const [key, ratio] of Object.entries(pcRadio)){
+          const newWidth = Math.round(width * ratio);
+          const newHeight = Math.round(height * ratio);
+
+          sharp(imagePath)
+          .resize({ width: newWidth, height: newHeight }) 
+          .jpeg(options)
+          .toFile(path.join(outputDir,basename + unit[key] + path.extname(imagePath)))
+          .catch(err => console.error(err));
+          console.log(`生成${basename + unit[key]}图片成功`);
+        }
+      }
     }catch(err){
       console.log(Chalk.red(err))
     }
+  }
+
+  fitImageCreate(basename, imagePath, outputDir, isPhone){
+    let stat = false;
+    this.$('img').each((i, el)=>{
+      if(!this.$(el).prop('src').includes(basename)) return true;
+
+      const ParentTagName = this.$(el).parent().prop('tagName').toLowerCase();
+      const ParentClass = this.$(el).parent().prop('class');
+
+      if(ParentTagName  == 'picture' && ParentClass.includes('auto-img')){
+        return false;
+      }else if(ParentTagName  == 'picture' && ParentClass.includes('fit-img')){
+        if(isPhone){
+          sharp(imagePath)
+          .toFile(path.join(outputDir, basename + path.extname(imagePath)))
+          .catch(err => console.error(err));
+        }else{
+          sharp(imagePath)
+          .toFile(path.join(outputDir, basename + "_m" + path.extname(imagePath)))
+          .catch(err => console.error(err));
+        }
+        stat = true;
+        return false;
+      }else{
+        sharp(imagePath)
+        .toFile(path.join(outputDir, basename + path.extname(imagePath)))
+        .catch(err => console.error(err));
+        stat = true
+        return false;
+      }
+    })
+    return stat;
   }
 
   getAllImages(dir = this.options.dir){
@@ -134,8 +171,8 @@ class HotUpdatePlugin {
       fs.readdir(this.options.output, (err, files) => {
         this.deleteMap.map(v => {
           if(v === '') return;
-          const fileName = v.match(/[\w-]+\.(jpg|png)$/ig)[0];
-          const name = fileName.split('.')[0];
+          const fileName = v.match(/[\w-]+\.(jpg|png)$/ig);
+          const name = fileName[0]?.split('.')[0];
           const filesToDelete = files.filter(file => file.includes(name));
 
           filesToDelete.forEach(file => {

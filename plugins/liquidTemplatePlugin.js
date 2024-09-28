@@ -1,6 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const cheerio = require('cheerio');
+const sj = require('../shoplazzaImage.json');
+require('dotenv').config()
 
 class LiquidTemplatePlugin {
     constructor(options) {
@@ -11,28 +13,69 @@ class LiquidTemplatePlugin {
         compiler.hooks.emit.tapAsync('LiquidTemplatePlugin', (compilation, callback) => {
             const assets = compilation.assets;
             const output = {};
-
+            
             for(const assetName in assets){
                 if (assetName.endsWith('.css') || assetName.endsWith('.html') || assetName.endsWith('.js')) {
                     const assetSource = assets[assetName].source();
                     output[assetName] = assetSource;
                 }
             }
-            console.log(output)
-
             const $ = cheerio.load(output['index.html']);
-            let content;
-            content = `
+            if(this.options.type == 'shoplazza'){
+                $('picture').each((i, el) => {
+                    $(el).children().each((j, child) => {
+                        const tagName = $(child).prop('tagName').toLowerCase();
+                        if(tagName == 'source'){
+                            let m_imgName = $(child).attr('srcset').split('/').pop();
+                            sj[m_imgName] && $(child).attr('data-srcset', sj[m_imgName]);
+                            sj[m_imgName] && $(child).attr('srcset', sj[m_imgName]);
+                        }else if(tagName == 'img'){
+                            let imgName = $(child).attr('src').split('/').pop();
+                            sj[imgName] && $(child).attr('src', sj[imgName]);
+                        }
+                    })
+                })
+                $('img').each((i, el)=>{
+                    const tagName = $(el).parent().prop('tagName').toLowerCase();
+                    if(tagName != 'picture'){
+                        let imgName = $(el).attr('src').split('/').pop();
+                        sj[imgName] && $(el).attr('src', sj[imgName]);
+                    }
+                })
+            }else{
+                $('picture').each((i, el) => {
+                    $(el).children().each((j, child) => {
+                        const tagName = $(child).prop('tagName').toLowerCase();
+                        if(tagName == 'source'){
+                            let ImageName = $(child).attr('srcset').split('/').pop();
+                            $(child).attr('srcset', process.env.CDN_IMAGE_URL + ImageName)
+                            $(child).attr('data-srcset', process.env.CDN_IMAGE_URL + ImageName);
+                        }else if(tagName == 'img'){
+                            let imgName = $(child).attr('src').split('/').pop();
+                            $(child).attr('src', process.env.CDN_IMAGE_URL + imgName);
+                        }
+                    })
+                })
+                $('img').each((i, child)=>{
+                    const tagName = $(child).parent().prop('tagName').toLowerCase();
+                    if(tagName != 'picture'){
+                        let imgName = $(child).attr('src').split('/').pop();
+                        $(child).attr('src', process.env.CDN_IMAGE_URL + imgName);
+                    }
+                })
+            }
+
+            let content = `
                 <style>${output['main.css']}</style>
                 ${$('body').html()}
-                <script>${output['main.js']}</script>
+                <script>${output['bundle.js']} </script>
                 {% schema %}
                 {
-                    "name": "template",
+                    "name": "${process.env.LIQUID_NAME}",
                     "settings": [],
                     "presets": [
                         {
-                            "name": "template"
+                            "name": "${process.env.LIQUID_NAME}"
                         }
                     ]
                 }
