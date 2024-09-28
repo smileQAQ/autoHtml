@@ -1,6 +1,0 @@
-C:\Users\114334\Desktop\t\src\assets\images\mobile\s1-pic1.jpg
-C:\Users\114334\Desktop\t\src\assets\images\mobile\sec3-pic1.jpg
-C:\Users\114334\Desktop\t\src\assets\images\mobile\sec3-pic2.jpg
-C:\Users\114334\Desktop\t\src\assets\images\s1-pic1.jpg
-C:\Users\114334\Desktop\t\src\assets\images\sec3-pic1.jpg
-C:\Users\114334\Desktop\t\src\assets\images\sec3-pic2.jpg
