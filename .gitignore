@@ -2,5 +2,6 @@
 /src/dist
 imageMap.txt
 shoplazzaImage.json
+package-lock.json
 *.jpg
 *.png

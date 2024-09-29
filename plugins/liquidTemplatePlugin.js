@@ -13,6 +13,7 @@ class LiquidTemplatePlugin {
         compiler.hooks.emit.tapAsync('LiquidTemplatePlugin', (compilation, callback) => {
             const assets = compilation.assets;
             const output = {};
+            let schema;
             
             for(const assetName in assets){
                 if (assetName.endsWith('.css') || assetName.endsWith('.html') || assetName.endsWith('.js')) {
@@ -42,6 +43,33 @@ class LiquidTemplatePlugin {
                         sj[imgName] && $(el).attr('src', sj[imgName]);
                     }
                 })
+                schema = `
+                    {% schema %}
+                        {
+                            "name": "${process.env.LIQUID_NAME}",
+                            "settings": [],
+                            "presets": [
+                                {
+                                    "name": "${process.env.LIQUID_NAME}",
+                                    "cname": {
+                                    "en-US": "Cart",
+                                    "zh-CN": "卡片"
+                                    },
+                                    "category": {
+                                    "en-US": "Page",
+                                    "zh-CN": "页面"
+                                    },
+                                    "ccategory": {
+                                    "en-US": "Page",
+                                    "zh-CN": "页面"
+                                    },
+                                    "display": true,
+                                    "blocks": []
+                                }
+                            ]
+                        }
+                        {% endschema %}
+                `;
             }else{
                 $('picture').each((i, el) => {
                     $(el).children().each((j, child) => {
@@ -63,23 +91,26 @@ class LiquidTemplatePlugin {
                         $(child).attr('src', process.env.CDN_IMAGE_URL + imgName);
                     }
                 })
+                schema = `
+                    {% schema %}
+                        {
+                            "name": "${process.env.LIQUID_NAME}",
+                            "settings": [],
+                            "presets": [
+                                {
+                                    "name": "${process.env.LIQUID_NAME}"
+                                }
+                            ]
+                        }
+                    {% endschema %}
+                `
             }
 
             let content = `
                 <style>${output['main.css']}</style>
                 ${$('body').html()}
                 <script>${output['bundle.js']} </script>
-                {% schema %}
-                {
-                    "name": "${process.env.LIQUID_NAME}",
-                    "settings": [],
-                    "presets": [
-                        {
-                            "name": "${process.env.LIQUID_NAME}"
-                        }
-                    ]
-                }
-                {% endschema %}
+                ${schema}
             `
             const outputPath = path.resolve(compiler.options.output.path, this.options.filename);
             fs.writeFile(outputPath, content, (err) => {
