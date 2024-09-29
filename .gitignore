@@ -1,3 +1,6 @@
 /node_modules
 /src/dist
 imageMap.txt
+shoplazzaImage.json
+*.jpg
+*.png
