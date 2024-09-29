@@ -95,7 +95,10 @@ class HotUpdatePlugin {
   fitImageCreate(basename, imagePath, outputDir, isPhone){
     let stat = false;
     this.$('img').each((i, el)=>{
-      if(!this.$(el).prop('src').includes(basename)) return true;
+      if(!this.$(el).prop('src').includes(basename)) {
+        stat = true;
+        return true;
+      };
 
       const ParentTagName = this.$(el).parent().prop('tagName').toLowerCase();
       const ParentClass = this.$(el).parent().prop('class');
