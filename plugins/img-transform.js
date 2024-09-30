@@ -33,7 +33,7 @@ class ImageTransformPlugin {
                   const elClass = $(el).attr('class');
                   let src =  $(el).attr('src');
                   $(el).addClass('lozad');
-                  $(el).removeClass('fit-img');
+                  // $(el).removeClass('fit-img');
 
                   if(this.options.mode == 'dev'){
                     const mSrc = src.replace("images/", `images/mobile/`);

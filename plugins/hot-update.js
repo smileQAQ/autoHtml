@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const Chalk = require('chalk');
 const cheerio = require('cheerio');
+var _ = require('lodash');
 
 const pcRadio = {
   // '4k': 3840 / 2048,
@@ -28,6 +29,7 @@ class HotUpdatePlugin {
     this.ImageMap = [];
     this.deleteMap = [];
     this.addMap = [];
+    this.elementQuoteMap = [];
   }
   async apply(compiler) {
     compiler.hooks.emit.tap('HotUpdatePlugin', (compilation) => {
@@ -37,19 +39,20 @@ class HotUpdatePlugin {
     });
   }
 
-  createImageLoop(){
+  async createImageLoop(){
     const outputDir = this.options.output;
-    this.addMap.forEach(imagePath => {
+
+    for(let [index, imagePath] of this.addMap.entries()){
       if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
       }
       
       if(imagePath.startsWith(path.join(this.options.dir, 'mobile'))){
-        this.generateImg({imagePath, outputDir}, {quality: 90}, 'jpg', true);
+        await this.generateImg({imagePath, outputDir}, {quality: 90}, 'jpg', true);
       }else{
-        this.generateImg({imagePath, outputDir}, {quality: 90}, 'jpg', false);
+        await this.generateImg({imagePath, outputDir}, {quality: 90}, 'jpg', false);
       }
-    });
+    }
   }
 
   async generateImg(params, options, suffix, isPhone) {
@@ -92,40 +95,34 @@ class HotUpdatePlugin {
     }
   }
 
-  fitImageCreate(basename, imagePath, outputDir, isPhone){
-    let stat = false;
-    this.$('img').each((i, el)=>{
-      if(!this.$(el).prop('src').includes(basename)) {
-        stat = true;
-        return true;
-      };
-
-      const ParentTagName = this.$(el).parent().prop('tagName').toLowerCase();
-      const ParentClass = this.$(el).parent().prop('class');
-
-      if(ParentTagName  == 'picture' && ParentClass.includes('auto-img')){
+  async fitImageCreate(basename, imagePath, outputDir, isPhone){
+    let quoteStatus = this.elementQuoteMap.findIndex(v => v[1].includes(path.basename(imagePath))); //新添加的图片是否在html中引用了
+    if(quoteStatus > -1){
+      let classN = this.elementQuoteMap[quoteStatus][0];
+      if(classN.includes('auto-img')){
+        this.ImageMap.push(imagePath)
         return false;
-      }else if(ParentTagName  == 'picture' && ParentClass.includes('fit-img')){
+      }else if(classN.includes('fit-img')){
+        this.ImageMap.push(imagePath);
         if(isPhone){
-          sharp(imagePath)
+          await sharp(imagePath)
           .toFile(path.join(outputDir, basename + "_m"+ path.extname(imagePath)))
           .catch(err => console.error(err));
         }else{
-          sharp(imagePath)
-          .toFile(path.join(outputDir, basename + path.extname(imagePath)))
+          await sharp(imagePath)
+          .toFile(path.join(outputDir, path.basename(imagePath)))
           .catch(err => console.error(err));
         }
-        stat = true;
-        return false;
+        return true;
       }else{
-        sharp(imagePath)
-        .toFile(path.join(outputDir, basename + path.extname(imagePath)))
+        this.ImageMap.push(imagePath)
+        await sharp(imagePath)
+        .toFile(path.join(outputDir, path.basename(imagePath)))
         .catch(err => console.error(err));
-        stat = true
-        return false;
+        return true;
       }
-    })
-    return stat;
+    }
+    return true;
   }
 
   getAllImages(dir = this.options.dir){
@@ -151,10 +148,14 @@ class HotUpdatePlugin {
         this.writeTextMap(this.imagePathsArray);
         return
       }
-
-      this.ImageMap = data.split('\n');
+      this.originMap = data.split('\n');
+      this.ImageMap = [...this.originMap];
       this.deleteMap = this.ImageMap.filter(x => !this.imagePathsArray.includes(x));
-      this.addMap = this.imagePathsArray.filter(x => !this.ImageMap.includes(x));
+      this.addMap = _.difference(this.imagePathsArray, this.ImageMap);
+      this.$('img').each((i, el)=>{
+        this.elementQuoteMap.push([this.$(el).prop('class'), this.$(el).prop('src')]);
+      })
+      this.elementQuoteMap = _.uniqWith(this.elementQuoteMap, _.isEqual);
       this.deleteMap.length && this.updateTextMap('delete');
       this.addMap.length && this.updateTextMap('addition');
     })
@@ -169,7 +170,7 @@ class HotUpdatePlugin {
     })
   }
 
-  updateTextMap(method){
+  async updateTextMap(method){
     if(method === 'delete'){
       fs.readdir(this.options.output, (err, files) => {
         this.deleteMap.map(v => {
@@ -195,9 +196,10 @@ class HotUpdatePlugin {
         })
       })
     }else if(method === 'addition'){
-      let textData = this.ImageMap.concat(this.addMap);
-      this.writeTextMap(textData);
-      this.createImageLoop();
+      await this.createImageLoop();
+      this.ImageMap = _.compact(this.ImageMap);
+      
+      !_.isEqual(this.ImageMap, this.originMap) && this.writeTextMap(this.ImageMap);
     }
   }
 }
