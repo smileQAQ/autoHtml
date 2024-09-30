@@ -28,7 +28,12 @@ module.exports = (env)=>{
             new LiquidTemplatePlugin({
                 filename: process.env.LIQUID_NAME+'.liquid' ,
                 type: env.type
-            })
-        ]
+            }),
+        ],
+        externals:{
+            gsap: 'gsap',
+            "gsap/ScrollTrigger": "gsap.ScrollTrigger",
+            "gsap/ScrollToPlugin": "gsap.ScrollToPlugin",
+        }
     });
 }
