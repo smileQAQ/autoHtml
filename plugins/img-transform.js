@@ -12,22 +12,24 @@ class ImageTransformPlugin {
               const $ = cheerio.load(data.html);
               $('img').each((i, el) => {
                 if($(el).attr('class')?.match("auto-img")){
+                  const elClass = $(el).attr('class');
+                  $(el).addClass('lozad');
                   const src = this.options.mode == 'dev' ? $(el).attr('src').replace('./assets', './dist') : $(el).attr('src').replace('/assets', '');
                   const suffix = src.match(/.[a-zA-Z]+$/ig);
                   const s2560 = src.replace(suffix, `_2x${suffix}`);
                   const s1920 = src.replace(suffix, `_x${suffix}`);
                   const s950 = src.replace(suffix, `_y${suffix}`);
                   const s450 = src.replace(suffix, `_yy${suffix}`);
+                  const blur = src.replace(suffix, `_blur${suffix}`);
+                  $(el).attr('src', blur);
                   $(el).replaceWith(`
-                    <div class='auto-img'>
-                      <picture>
-                        <source srcset="${s450}" data-srcset="${s450}" media="(max-width: 450px)" >
-                        <source srcset="${s950}" data-srcset="${s950}" media="(max-width: 950px)" >
-                        <source srcset="${s1920}" data-srcset="${s1920}" media="(max-width: 1920px)">
-                        <source srcset="${s2560}" data-srcset="${s2560}">
-                        <img class="lozad" src="${s1920}" alt="" />
-                      </picture>
-                    </div>
+                    <picture class="${elClass}">
+                      <source srcset="${s450}" data-srcset="${s450}" media="(max-width: 450px)" >
+                      <source srcset="${s950}" data-srcset="${s950}" media="(max-width: 950px)" >
+                      <source srcset="${s1920}" data-srcset="${s1920}" media="(max-width: 1920px)">
+                      <source srcset="${s2560}" data-srcset="${s2560}">
+                      ${$(el).toString()}
+                    </picture>
                   `);
                 }else if($(el).attr('class')?.match("fit-img")){
                   const elClass = $(el).attr('class');

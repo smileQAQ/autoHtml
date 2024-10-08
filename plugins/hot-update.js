@@ -10,6 +10,7 @@ const pcRadio = {
   '2560': 1,
   '1920': 1920 / 2560,
   '1280': 1280 / 2560,
+  '100': 20 / 2560
 }
 const mbRadio = {
   '750': 1,
@@ -19,6 +20,7 @@ const unit = {
   '2560': '_2x',
   '1920': '_x',
   '1280': '_sx',
+  '100': '_blur',
   '750': '_y',
   '450': '_yy'
 }
@@ -63,7 +65,7 @@ class HotUpdatePlugin {
       const basename = path.basename(imagePath, path.extname(imagePath));
       const {width, height} = metaData;
 
-      if(this.fitImageCreate(basename, imagePath, outputDir, isPhone)) return;
+      if(await this.fitImageCreate(basename, imagePath, outputDir, isPhone)) return;
 
       if(isPhone){
         for(const [key, ratio] of Object.entries(mbRadio)){
@@ -96,11 +98,11 @@ class HotUpdatePlugin {
   }
 
   async fitImageCreate(basename, imagePath, outputDir, isPhone){
-    let quoteStatus = this.elementQuoteMap.findIndex(v => v[1].includes(path.basename(imagePath))); //新添加的图片是否在html中引用了
+    let quoteStatus = this.elementQuoteMap.findIndex(v => v[1].replace('_blur', "").includes(path.basename(imagePath))); //新添加的图片是否在html中引用了
     if(quoteStatus > -1){
       let classN = this.elementQuoteMap[quoteStatus][0];
       if(classN.includes('auto-img')){
-        this.ImageMap.push(imagePath)
+        this.ImageMap.push(imagePath);
         return false;
       }else if(classN.includes('fit-img')){
         this.ImageMap.push(imagePath);

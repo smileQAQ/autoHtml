@@ -42,12 +42,12 @@ textarea,
 select {
   font: inherit;
 }
-.lozad {
-  opacity: 0;
+.lozad{
+  filter: blur(1.25vw);
+  transition: filter 0.4s, -webkit-filter 0.4s;
 }
-.loaded {
-  opacity: 1;
-  transition: opacity 0.5s ease-in;
+.lozad.loaded{
+  filter: blur(0);
 }
 @media (prefers-reduced-motion: reduce) {
   html:focus-within {
