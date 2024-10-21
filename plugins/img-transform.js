@@ -13,7 +13,6 @@ class ImageTransformPlugin {
               $('img').each((i, el) => {
                 if($(el).attr('class')?.match("auto-img")){
                   const elClass = $(el).attr('class');
-                  $(el).addClass('lozad');
                   const src = this.options.mode == 'dev' ? $(el).attr('src').replace('./assets', './dist') : $(el).attr('src').replace('/assets', '');
                   const suffix = src.match(/.[a-zA-Z]+$/ig);
                   const s2560 = src.replace(suffix, `_2x${suffix}`);
@@ -21,43 +20,34 @@ class ImageTransformPlugin {
                   const s950 = src.replace(suffix, `_y${suffix}`);
                   const s450 = src.replace(suffix, `_sy${suffix}`);
                   const blur = src.replace(suffix, `_blur${suffix}`);
-                  $(el).attr('src', blur);
+                  $(el).attr('data-src', blur);
                   $(el).replaceWith(`
-                    <picture class="${elClass}">
-                      <source srcset="${s450}" data-srcset="${s450}" media="(max-width: 450px)" >
-                      <source srcset="${s950}" data-srcset="${s950}" media="(max-width: 950px)" >
-                      <source srcset="${s1920}" data-srcset="${s1920}" media="(max-width: 1920px)">
-                      <source srcset="${s2560} 2x" data-srcset="${s2560} 2x">
+                    <picture class="${elClass} lozad">
+                      <source data-srcset="${s450}" media="(max-width: 450px)" >
+                      <source data-srcset="${s950}" media="(max-width: 950px)" >
+                      <source data-srcset="${s1920}" media="(max-width: 1920px)">
+                      <source data-srcset="${s2560} 2x">
                       ${$(el).toString()}
                     </picture>
                   `);
                 }else if($(el).attr('class')?.match("fit-img")){
+                  let src = $(el).attr('src').replace('./assets', './dist');
                   const elClass = $(el).attr('class');
-                  let src =  $(el).attr('src');
-                  $(el).addClass('lozad');
-                  // $(el).removeClass('fit-img');
+                  const suffix = src.match(/.[a-zA-Z]+$/ig);
+                  const blur = src.replace(suffix, `_blur${suffix}`);
+                  $(el).attr('src', blur);
 
-                  if(this.options.mode == 'dev'){
-                    const mSrc = src.replace("images/", `images/mobile/`);
-                    $(el).replaceWith(`
-                      <picture class="${elClass}">
-                        <source srcset="${mSrc}" data-srcset="${mSrc}" media="(max-width: 950px)" >
-                        ${$(el).toString()}
-                      </picture>
-                    `);
-                  }else{
-                    const ImageName = src.match(/[^\/]+\.[a-zA-Z]+$/ig)[0];
-                    const suffix = ImageName.match(/.[a-zA-Z]+$/ig);
-                    const mSrc =  ImageName.replace(suffix, `_m${suffix}`);
-                    $(el).replaceWith(`
-                      <picture class="${elClass}">
-                        <source srcset="${mSrc}" data-srcset="${mSrc}" media="(max-width: 950px)" >
-                        ${$(el).toString()}
-                      </picture>
-                    `);
-                  }
+                  const ImageName = src.match(/[^\/]+\.[a-zA-Z]+$/ig)[0];
+                  const mSrc =  ImageName.replace(suffix, `_m${suffix}`);
+                  $(el).replaceWith(`
+                    <picture class="${elClass} lozad">
+                      <source data-srcset="${mSrc}" media="(max-width: 950px)">
+                      <source data-srcset="${src}">
+                      ${$(el).toString()}
+                    </picture>
+                  `);
                 } else {
-                  $(el).addClass('lozad');
+                  // $(el).addClass('lozad');
                 }
               })
               data.html = $.html();
