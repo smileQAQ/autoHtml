@@ -33,8 +33,13 @@ a:not([class]) {
 img,
 picture {
   width: 100%;
+  height: 100%;
   max-width: 100%;
   display: block;
+  object-fit: cover;
+}
+video{
+  width: 100%;
 }
 input,
 button,

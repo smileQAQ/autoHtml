@@ -19,7 +19,7 @@ class ImageTransformPlugin {
                   const s2560 = src.replace(suffix, `_2x${suffix}`);
                   const s1920 = src.replace(suffix, `_x${suffix}`);
                   const s950 = src.replace(suffix, `_y${suffix}`);
-                  const s450 = src.replace(suffix, `_yy${suffix}`);
+                  const s450 = src.replace(suffix, `_sy${suffix}`);
                   const blur = src.replace(suffix, `_blur${suffix}`);
                   $(el).attr('src', blur);
                   $(el).replaceWith(`
@@ -27,7 +27,7 @@ class ImageTransformPlugin {
                       <source srcset="${s450}" data-srcset="${s450}" media="(max-width: 450px)" >
                       <source srcset="${s950}" data-srcset="${s950}" media="(max-width: 950px)" >
                       <source srcset="${s1920}" data-srcset="${s1920}" media="(max-width: 1920px)">
-                      <source srcset="${s2560}" data-srcset="${s2560}">
+                      <source srcset="${s2560} 2x" data-srcset="${s2560} 2x">
                       ${$(el).toString()}
                     </picture>
                   `);
